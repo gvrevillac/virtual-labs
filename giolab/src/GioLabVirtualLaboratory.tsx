@@ -2,12 +2,12 @@ import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Search, Filter, ArrowLeft, Play, Square, RotateCcw, 
-  Activity, Zap, Box, FlaskConical, Waves, ChevronRight, Target, Info
+  Activity, Zap, Box, FlaskConical, Waves, ChevronRight, Target, Info, Globe
 } from 'lucide-react';
 
 // --- TYPES ---
 type EngineType = 'kinematics' | 'circuit' | 'particle' | 'reaction' | 'wave';
-type Subject = 'Physics' | 'Chemistry';
+type Subject = 'Physics' | 'Chemistry' | 'General Science';
 
 interface VariableConfig {
   id: string;
@@ -94,11 +94,20 @@ const chemistryTitles = [
   "Chromatography (TLC)", "Distillation Simulation", "Extraction Techniques", "Titration with Permanganate", "Iodometric Titration", "Conductometric Titration", "Potentiometric Titration", "Gravimetric Analysis", "Colorimetry & Kinetics", "Mass Spectrometry (Isotopes)"
 ];
 
+const generalScienceTitles = [
+  "Water Cycle & State Changes", "Earth's Interior & Layers", "Plate Tectonics & Boundaries", "Rock Cycle & Formation", "Weather Systems & Fronts", "Greenhouse Effect & Climate", "Ocean Currents & Temperature", "Soil Permeability & Erosion", "Earthquakes & Seismic Waves", "Volcanic Eruptions & Viscosity",
+  "Solar System Orbits", "Moon Phases & Illumination", "Solar & Lunar Eclipses", "Seasons & Axial Tilt", "Gravity & Ocean Tides", "Plant Photosynthesis", "Cellular Respiration", "Food Webs & Energy Flow", "Population Dynamics", "Ecosystem Carrying Capacity",
+  "Human Digestive System", "Respiratory Gas Exchange", "Blood Circulation & Heart Rate", "Nervous System Reflexes", "Eye & Vision Optics", "DNA Structure & Base Pairing", "Genetics & Punnett Squares", "Natural Selection & Adaptation", "Cell Division (Mitosis)", "Osmosis & Diffusion",
+  "States of Matter Transitions", "Density & Buoyancy", "Levers & Mechanical Advantage", "Pulleys & Force", "Magnetic Fields & Materials", "Basic Circuits (Bulbs & Batteries)", "Sound Waves & Pitch", "Light Spectrum & Prisms", "Heat Transfer (Conduction)", "Renewable Energy (Solar/Wind)",
+  "Fossil Formation & Dating", "Carbon Cycle", "Nitrogen Cycle", "Biomes & Climate Zones", "Plant Transpiration", "Animal Adaptations (Insulation)", "Microorganism Growth Curve", "Acid Rain & Environmental Effects", "Water Filtration Systems", "Space Exploration Trajectories"
+];
+
 const generateCurriculumData = (): Lab[] => {
   const labs: Lab[] = [];
   
   const getEngineDetails = (title: string, subject: Subject): { type: EngineType, vars: VariableConfig[], chart: {x: string, y: string} } => {
     const t = title.toLowerCase();
+    
     if (subject === 'Physics') {
       if (/(circuit|ohm|kirchhoff|capacitor|dielectric|resistivity|faraday|lenz|transformer|rc|rlc|ac)/.test(t)) {
         return { type: 'circuit', vars: defaultCircuitVars, chart: { x: "Time (s)", y: "Current (A)" } };
@@ -110,7 +119,8 @@ const generateCurriculumData = (): Lab[] => {
         return { type: 'particle', vars: defaultParticleVars, chart: { x: "Temperature/Volume", y: "Pressure/Force" } };
       }
       return { type: 'kinematics', vars: defaultKinematicsVars, chart: { x: "Time/Distance", y: "Velocity/Height" } };
-    } else {
+      
+    } else if (subject === 'Chemistry') {
       if (/(titration|reaction|equation|limiting|yield|molarity|concentration|dilution|equilibrium|buffer|acid|base|ph|precipitation|decay|esterification)/.test(t)) {
         return { type: 'reaction', vars: defaultReactionVars, chart: { x: "Volume/Time", y: "pH/Concentration" } };
       }
@@ -121,6 +131,22 @@ const generateCurriculumData = (): Lab[] => {
         return { type: 'wave', vars: defaultWaveVars, chart: { x: "Wavelength (nm)", y: "Absorbance/Intensity" } };
       }
       return { type: 'particle', vars: defaultParticleVars, chart: { x: "Property (X)", y: "Property (Y)" } };
+      
+    } else {
+      // General Science Mapping
+      if (/(circuit|battery|machine|lever|pulley|magnetic)/.test(t)) {
+        return { type: 'circuit', vars: defaultCircuitVars, chart: { x: "Time (s)", y: "Energy Output" } };
+      }
+      if (/(wave|sound|light|prism|optics|vision|earthquake|seismic)/.test(t)) {
+        return { type: 'wave', vars: defaultWaveVars, chart: { x: "Time", y: "Amplitude/Intensity" } };
+      }
+      if (/(cycle|growth|digestion|respiration|photosynthesis|reaction|acid|filtration)/.test(t)) {
+        return { type: 'reaction', vars: defaultReactionVars, chart: { x: "Time (Days/Hrs)", y: "System Level" } };
+      }
+      if (/(orbit|gravity|trajectory|system|tide|motion)/.test(t)) {
+        return { type: 'kinematics', vars: defaultKinematicsVars, chart: { x: "Time", y: "Position" } };
+      }
+      return { type: 'particle', vars: defaultParticleVars, chart: { x: "Environmental Factor", y: "Observation Metric" } };
     }
   };
 
@@ -142,6 +168,17 @@ const generateCurriculumData = (): Lab[] => {
       `Chemistry Unit ${Math.floor(index/10) + 1}: ${title.split(' ')[0]}`, 
       `Analyze the chemical properties and mathematical relationships related to ${title.toLowerCase()}.`, 
       `Develop a laboratory protocol utilizing ${title} principles.`, 
+      type, vars, chart
+    ));
+  });
+
+  generalScienceTitles.forEach((title, index) => {
+    const { type, vars, chart } = getEngineDetails(title, 'General Science');
+    labs.push(buildLab(
+      201 + index, title, 'General Science', 
+      `General Science Unit ${Math.floor(index/10) + 1}: ${title.split(' ')[0]}`, 
+      `Explore the fundamental concepts and observational data related to ${title.toLowerCase()}.`, 
+      `Apply knowledge of ${title} to explain everyday natural phenomena.`, 
       type, vars, chart
     ));
   });
@@ -357,7 +394,7 @@ const ParticleThermoEngine = ({ variables, setChartData, isPlaying }: any) => {
   }, [isPlaying, vol, pressure]);
 
   const speedMultiplier = temp / 300;
-  const boxWidth = `${Math.max(20, vol * 2)}%`;
+  const boxWidth = `${Math.max(20, (vol / 50) * 100)}%`;
 
   return (
     <div className="relative w-full h-full bg-orange-50/30 rounded-2xl flex items-center justify-center border border-orange-100 shadow-inner overflow-hidden">
@@ -518,7 +555,9 @@ const SimulationThumbnail = ({ subject, engineType }: { subject: Subject, engine
 
   const bgGradient = subject === 'Physics'
     ? 'from-blue-600 to-indigo-700'
-    : 'from-emerald-600 to-teal-700';
+    : subject === 'Chemistry'
+      ? 'from-emerald-600 to-teal-700'
+      : 'from-purple-600 to-fuchsia-700'; // General Science Color
 
   return (
     <div className={`w-full h-full flex items-center justify-center bg-gradient-to-br ${bgGradient}`}>
@@ -570,7 +609,9 @@ const LabDiscussion = ({ lab, onStart, onBack }: { lab: Lab, onStart: () => void
               In this virtual experiment, you will utilize a {lab.engineType} simulation engine to manipulate variables and observe their direct effects on the system. 
               {lab.subject === 'Physics' 
                 ? " Pay close attention to how the physical parameters interact, noting the relationships between forces, energy, and motion as described by classical mechanics and thermodynamics."
-                : " Observe the chemical changes and reaction dynamics closely. Monitor the equilibrium states, concentration shifts, and molecular interactions as you adjust the environmental conditions."}
+                : lab.subject === 'Chemistry'
+                  ? " Observe the chemical changes and reaction dynamics closely. Monitor the equilibrium states, concentration shifts, and molecular interactions as you adjust the environmental conditions."
+                  : " Take note of the complex interactions across natural systems. Whether investigating biological life cycles, earth systems, or foundational physical interactions, carefully observe how changing one variable impacts the broader ecosystem or physical state."}
             </p>
             <p className="text-gray-700 mb-8 leading-relaxed">
               Use the provided control panel to adjust variables such as {lab.engineConfig.variables.map(v => v.label.toLowerCase()).join(', ')}. Observe the real-time graph to analyze the relationship between {lab.engineConfig.chartTitles.x} and {lab.engineConfig.chartTitles.y}. Ensure you take detailed notes in the analysis section during your run.
@@ -619,7 +660,23 @@ const LabWorkspace = ({ lab, onBack }: { lab: Lab, onBack: () => void }) => {
     }
   }, [lab.engineType]);
 
-  const isPhysics = lab.subject === 'Physics';
+  const badgeColor = lab.subject === 'Physics' 
+    ? 'bg-blue-100 text-blue-800' 
+    : lab.subject === 'Chemistry'
+      ? 'bg-teal-100 text-teal-800'
+      : 'bg-purple-100 text-purple-800';
+
+  const iconColor = lab.subject === 'Physics' 
+    ? 'text-blue-600' 
+    : lab.subject === 'Chemistry'
+      ? 'text-teal-600'
+      : 'text-purple-600';
+      
+  const chartColor = lab.subject === 'Physics' 
+    ? '#2563eb' 
+    : lab.subject === 'Chemistry'
+      ? '#0d9488'
+      : '#9333ea';
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-800 flex flex-col font-sans">
@@ -635,7 +692,7 @@ const LabWorkspace = ({ lab, onBack }: { lab: Lab, onBack: () => void }) => {
         </button>
         <div className="flex-1">
           <div className="flex items-center gap-3">
-            <span className={`px-2 py-0.5 rounded text-xs font-bold ${isPhysics ? 'bg-blue-100 text-blue-800' : 'bg-teal-100 text-teal-800'}`}>
+            <span className={`px-2 py-0.5 rounded text-xs font-bold ${badgeColor}`}>
               {lab.subject}
             </span>
             <h1 className="text-lg font-bold text-gray-900 m-0">{lab.title}</h1>
@@ -661,7 +718,7 @@ const LabWorkspace = ({ lab, onBack }: { lab: Lab, onBack: () => void }) => {
           <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
             <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-100">
               <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2 m-0">
-                <Activity className={`w-5 h-5 ${isPhysics ? 'text-blue-600' : 'text-teal-600'}`} /> Control Variables
+                <Activity className={`w-5 h-5 ${iconColor}`} /> Control Variables
               </h2>
               <div className="flex gap-2">
                 <button 
@@ -695,7 +752,7 @@ const LabWorkspace = ({ lab, onBack }: { lab: Lab, onBack: () => void }) => {
                 <div key={v.id} className="p-4 rounded border border-gray-200 bg-gray-50/50">
                   <div className="flex justify-between mb-2">
                     <label className="text-sm font-semibold text-gray-700">{v.label}</label>
-                    <span className={`text-sm font-bold ${isPhysics ? 'text-blue-600' : 'text-teal-600'}`}>
+                    <span className={`text-sm font-bold ${iconColor}`}>
                       {variables[v.id]} {v.unit}
                     </span>
                   </div>
@@ -727,7 +784,7 @@ const LabWorkspace = ({ lab, onBack }: { lab: Lab, onBack: () => void }) => {
                 data={chartData} 
                 xAxisLabel={lab.engineConfig.chartTitles.x} 
                 yAxisLabel={lab.engineConfig.chartTitles.y} 
-                color={isPhysics ? "#2563eb" : "#0d9488"} 
+                color={chartColor} 
               />
             </div>
           </div>
@@ -765,15 +822,16 @@ const Dashboard = ({ onSelectLab }: { onSelectLab: (id: number) => void }) => {
     <div className="min-h-screen bg-gray-50 text-gray-800 p-4 md:p-8 font-sans selection:bg-blue-200">
       
       <header className="max-w-7xl mx-auto mb-12 text-center pt-8">
-        <div className="inline-flex items-center justify-center p-4 bg-white rounded-full mb-6 shadow-sm border border-gray-200">
-          <FlaskConical className="w-8 h-8 text-teal-600 mr-3" />
+        <div className="inline-flex items-center justify-center p-4 bg-white rounded-full mb-6 shadow-sm border border-gray-200 gap-4">
+          <Globe className="w-8 h-8 text-purple-600" />
           <Zap className="w-8 h-8 text-blue-600" />
+          <FlaskConical className="w-8 h-8 text-teal-600" />
         </div>
         <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-4 px-4 leading-tight">
-          GiOLab: Curriculum-Aligned Virtual Laboratory for Physics and Chemistry
+          GiOLab: Curriculum-Aligned Virtual Laboratory for Sciences
         </h1>
         <p className="text-lg text-gray-600 max-w-2xl mx-auto px-4 mt-4">
-          Interactive modules designed to enhance secondary education through guided discovery and real-time simulation.
+          Interactive modules designed to enhance secondary education through guided discovery and real-time simulation across Physics, Chemistry, and General Sciences.
         </p>
       </header>
 
@@ -791,8 +849,8 @@ const Dashboard = ({ onSelectLab }: { onSelectLab: (id: number) => void }) => {
             />
           </div>
 
-          <div className="flex gap-2">
-            {['All', 'Physics', 'Chemistry'].map(f => (
+          <div className="flex gap-2 flex-wrap justify-center">
+            {['All', 'Physics', 'Chemistry', 'General Science'].map(f => (
               <button
                 key={f}
                 onClick={() => setFilter(f as Subject | 'All')}
@@ -829,9 +887,11 @@ const Dashboard = ({ onSelectLab }: { onSelectLab: (id: number) => void }) => {
                   <div className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider shadow-sm flex items-center gap-1 ${
                     lab.subject === 'Physics' 
                       ? 'bg-blue-100 text-blue-800' 
-                      : 'bg-teal-100 text-teal-800'
+                      : lab.subject === 'Chemistry'
+                        ? 'bg-teal-100 text-teal-800'
+                        : 'bg-purple-100 text-purple-800'
                   }`}>
-                    {lab.subject === 'Physics' ? <Zap className="w-3 h-3" /> : <FlaskConical className="w-3 h-3" />}
+                    {lab.subject === 'Physics' ? <Zap className="w-3 h-3" /> : lab.subject === 'Chemistry' ? <FlaskConical className="w-3 h-3" /> : <Globe className="w-3 h-3" />}
                     {lab.subject}
                   </div>
                 </div>
@@ -850,7 +910,9 @@ const Dashboard = ({ onSelectLab }: { onSelectLab: (id: number) => void }) => {
                 <p className="text-sm text-gray-600 mb-4 line-clamp-2 flex-1">
                   {lab.competency}
                 </p>
-                <div className={`mt-auto flex items-center justify-between text-sm font-semibold transition-colors ${lab.subject === 'Physics' ? 'text-blue-600' : 'text-teal-600'}`}>
+                <div className={`mt-auto flex items-center justify-between text-sm font-semibold transition-colors ${
+                  lab.subject === 'Physics' ? 'text-blue-600' : lab.subject === 'Chemistry' ? 'text-teal-600' : 'text-purple-600'
+                }`}>
                   <span>View Details</span>
                   <ChevronRight className="w-4 h-4" />
                 </div>

@@ -1,0 +1,11 @@
+{
+  "scripts": {
+    "dev": "npm --prefix giolab run dev",
+    "build": "npm --prefix giolab run build",
+    "preview": "npm --prefix giolab run preview",
+    "lint": "npm --prefix giolab run lint"
+  },
+  "devDependencies": {
+    "gh-pages": "^6.3.0"
+  }
+}
